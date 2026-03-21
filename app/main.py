@@ -43,25 +43,34 @@ shipments = {
 }
 
 
-@app.get("/shipment/latest")
-def get_latest_shipment() -> dict[str, Any]:
-    id = max(shipments.keys())
-    return shipments[id]
-
-
-@app.get("/shipment/")
+@app.get("/shipment")
 def get_shipment(id: int) -> dict[str, Any]:
-
-    if not id:
-        id = max(shipments.keys())
-        return shipments[id]
-
+    #check for shipment with given id
     if id not in shipments:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Given id doesn't exist"
         )
     return shipments[id]
+
+@app.post("/shipment")
+def submit_shipment(content: str, weight: float) -> dict[str, int]:
+
+    if weight > 25:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail="Maximum weight limit is 25 kgs"
+        )
+    
+    new_id = max(shipments.keys()) + 1
+    
+    shipments[new_id] = {
+        "content" : content,
+        "weight" : weight,
+        "status" : "placed",
+    }
+    
+    return {"id": new_id}
 
 
 
