@@ -1,13 +1,11 @@
+
+from typing import Any
+
 from fastapi import FastAPI, HTTPException, status
 from scalar_fastapi import get_scalar_api_reference
-from typing import Any
-from pydantic import BaseModel
 
+from app.schemas import Shipment, ShipmentStatus
 
-class Shipment(BaseModel):
-    content: str
-    weight: float
-    destination: int
 
 
 
@@ -24,8 +22,8 @@ shipments = {
 }
 
 
-@app.get("/shipment")
-def get_shipment(id: int) -> dict[str, Any]:
+@app.get("/shipment", response_model=Shipment)
+def get_shipment(id: int):
     # check for shipment with given id
     if id not in shipments:
         raise HTTPException(
@@ -37,12 +35,6 @@ def get_shipment(id: int) -> dict[str, Any]:
 @app.post("/shipment")
 def submit_shipment(shipment: Shipment) -> dict[str, int]:
 
-    if shipment.weight > 25:
-        raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail="Maximum weight limit is 25 kgs",
-        )
-
     new_id = max(shipments.keys()) + 1
 
     shipments[new_id] = {
@@ -52,6 +44,8 @@ def submit_shipment(shipment: Shipment) -> dict[str, int]:
     }
 
     return {"id": new_id}
+
+
 
 @app.put("/shipment")
 def shipment_update(
@@ -66,12 +60,9 @@ def shipment_update(
     return shipments[id]
 
 @app.patch("/shipment")
-def patch_shipment(id: int, body: dict[str, Any]):
-    shipment = shipments[id]
-    shipment.update(body)
-    shipments[id] = shipment
-
-    return shipment
+def update_shipment(id: int, body: dict[str, ShipmentStatus]):
+    shipments[id].update(body)
+    return shipments[id]
 
 @app.delete("/shipment")
 def delete_shipment(id: int) -> dict[str, str]:
